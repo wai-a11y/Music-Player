@@ -1,0 +1,16 @@
+/* styles.css */
+#app { font-family: system-ui, sans-serif; padding: 16px; }
+.hidden { display: none; }
+.tabs { display: flex; gap: 8px; margin-bottom: 12px; }
+.tab { padding: 8px 16px; border: none; border-radius: 20px; background: #eee; cursor: pointer; }
+.tab.active { background: #1db954; color: white; }
+.list { list-style: none; padding: 0; }
+.list li {
+  padding: 12px; border-bottom: 1px solid #eee;
+  display: flex; justify-content: space-between; align-items: center;
+}
+.badge {
+  font-size: 11px; padding: 2px 8px; border-radius: 10px;
+  background: #e0e0e0; color: #555; font-weight: 600;
+}
+.badge.flac { background: #e3f2fd; color: #1565c0; }
