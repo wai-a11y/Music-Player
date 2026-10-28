@@ -16,7 +16,9 @@
     "@capacitor/cli": "^8.4.3",
     "@capacitor/core": "^8.5.3",
     "@capacitor/filesystem": "^8.1.5",
+    "@capawesome/capacitor-file-picker": "^8.1.0",
+    "@daniele-rolli/capacitor-scoped-storage": "^0.1.0",
     "howler": "^2.2.4",
-    "music-metadata-browser": "^0.3.1"
+    "music-metadata": "^12.3.2"
   }
 }
