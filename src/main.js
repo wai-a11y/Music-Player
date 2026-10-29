@@ -5,9 +5,12 @@ import { library, setTracks } from './library';
 import {
   playTrack, togglePlayPause, next, previous,
   setVolume, setPlayerCallbacks, toggleShuffle, stop,
-  seekTo, getPlaybackInfo, getVolumeLevel
+  seekTo, getPlaybackInfo, getVolumeLevel, getCurrentTrack,
+  formatTime,
 } from './player';
 import { appHTML } from './template';
+
+
 
 let activeAlbum = null;  // { name, artist, tracks } or null
 
@@ -236,6 +239,7 @@ setInterval(() => {
   const info = getPlaybackInfo();
   if (!info) return;
 
+  // ── Modern layout ──
   const seekBar = document.getElementById('seekBar');
   const currentTime = document.getElementById('currentTime');
 
@@ -245,14 +249,24 @@ setInterval(() => {
     seekBar.style.setProperty('--progress', `${pct}%`);
   }
   currentTime.textContent = formatTime(info.position);
-}, 500);
 
-function formatTime(seconds) {
-  if (!seconds || isNaN(seconds)) return '0:00';
-  const m = Math.floor(seconds / 60);
-  const s = Math.floor(seconds % 60).toString().padStart(2, '0');
-  return `${m}:${s}`;
-}
+  // ── Retro layout ──
+  const retroSeek = document.getElementById('retroSeekBar');
+  const retroCurrent = document.getElementById('retroCurrentTime');
+  const retroTotal = document.getElementById('retroTotalTime');
+
+  if (retroSeek && document.activeElement !== retroSeek) {
+    const total = info.duration > 0 ? info.duration : (getCurrentTrack()?.duration || 0);
+    retroSeek.max = total > 0 ? total : 100;
+    retroSeek.value = info.position;
+  }
+  if (retroCurrent) retroCurrent.textContent = formatTime(info.position);
+  if (retroTotal) {
+    const fallback = getCurrentTrack()?.duration || 0;
+    const total = info.duration > 0 ? info.duration : fallback;
+    retroTotal.textContent = formatTime(total);
+  }
+}, 500);
 
 // VU meter animation
 let lastLog = 0;
@@ -385,13 +399,32 @@ setInterval(() => {
   const info = getPlaybackInfo();
   if (!info) return;
 
-  // Update retro seek bar + time
+  const seekBar = document.getElementById('seekBar');
+  const currentTime = document.getElementById('currentTime');
+
+  if (document.activeElement !== seekBar) {
+    seekBar.value = info.position;
+    const pct = info.duration > 0 ? (info.position / info.duration) * 100 : 0;
+    seekBar.style.setProperty('--progress', `${pct}%`);
+  }
+  currentTime.textContent = formatTime(info.position);
+
+  // ── Retro layout updates ──
   const retroSeek = document.getElementById('retroSeekBar');
+  const retroCurrent = document.getElementById('retroCurrentTime');
+  const retroTotal = document.getElementById('retroTotalTime');
+
   if (retroSeek && document.activeElement !== retroSeek) {
     retroSeek.value = info.position;
     retroSeek.max = info.duration;
   }
-  document.getElementById('retroCurrentTime').textContent = formatTime(info.position);
+  if (retroCurrent) retroCurrent.textContent = formatTime(info.position);
+  if (retroTotal) {
+    // Fall back to the current track's metadata duration if Howler reports 0
+    const fallback = getCurrentTrack()?.duration || 0;
+    const total = info.duration > 0 ? info.duration : fallback;
+    retroTotal.textContent = formatTime(total);
+  }
 }, 500);
 
 document.getElementById('retroOpenLibrary').addEventListener('click', () => {
@@ -469,25 +502,4 @@ if (retroEl) {
   console.log('class:', retroEl.className);
 }
 
-import { registerPlugin } from '@capacitor/core';
 
-const NativeAudio = registerPlugin('NativeAudio');
-
-document.getElementById('testNativePlay').addEventListener('click', async () => {
-  try {
-    const track = getCurrentTrack();
-    if (!track) {
-      alert('No track loaded. Play a track first.');
-      return;
-    }
-
-    // Stop Howler so it doesn't play over the native service
-    if (window.currentHowlerSound) window.currentHowlerSound.stop();
-
-    await NativeAudio.play({ uri: track.uri });
-    console.log('Native play started for', track.fileName);
-  } catch (err) {
-    console.error('Native play error:', err);
-    alert('Native play failed: ' + err.message);
-  }
-});

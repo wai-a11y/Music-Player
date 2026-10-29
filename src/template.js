@@ -29,9 +29,7 @@ export const appHTML = `
       <button id="playPauseBtn">▶</button>
       <button id="nextBtn">⏭</button>
       <button id="stopBtn" class="secondary">⏹</button>
-	  <button id="testNativePlay" style="margin-top:16px; padding:8px 16px; background:var(--accent); color:#0a0f14; border-radius:8px; font-size:13px; font-weight:600;">
-         Test Native Playback
-      </button>
+	  
     </div>
 
     <input id="volumeSlider" type="range" min="0" max="1" step="0.01" value="0.8" class="volume" />
