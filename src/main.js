@@ -468,3 +468,26 @@ if (retroEl) {
   console.log('inline cssText:', retroEl.style.cssText);
   console.log('class:', retroEl.className);
 }
+
+import { registerPlugin } from '@capacitor/core';
+
+const NativeAudio = registerPlugin('NativeAudio');
+
+document.getElementById('testNativePlay').addEventListener('click', async () => {
+  try {
+    const track = getCurrentTrack();
+    if (!track) {
+      alert('No track loaded. Play a track first.');
+      return;
+    }
+
+    // Stop Howler so it doesn't play over the native service
+    if (window.currentHowlerSound) window.currentHowlerSound.stop();
+
+    await NativeAudio.play({ uri: track.uri });
+    console.log('Native play started for', track.fileName);
+  } catch (err) {
+    console.error('Native play error:', err);
+    alert('Native play failed: ' + err.message);
+  }
+});
