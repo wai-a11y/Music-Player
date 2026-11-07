@@ -119,18 +119,32 @@ button:active {
 }
 
 /* ── Album art placeholder ── */
+/* ── Album art ── */
 .np-art {
   flex: 0 0 auto;
   width: min(72vw, 300px);
-  aspect-ratio: 1 / 1;
+  height: min(72vw, 300px);
   margin: 8px auto 4px;
   border-radius: var(--radius);
-  background: radial-gradient(circle at 30% 25%, #2a3748 0%, #141a22 70%);
+  background-color: #0f1620;
+  background-image: radial-gradient(circle at 30% 25%, #2a3748 0%, #141a22 70%);
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
   border: 1px solid var(--border);
   box-shadow:
-    0 3px 8px rgba(0, 0, 0, 0.55),          /* tighter contact shadow */
-    0 28px 80px -8px rgba(0, 0, 0, 0.95),    /* deeper ambient falloff */
+    0 3px 8px rgba(0, 0, 0, 0.55),
+    0 28px 80px -8px rgba(0, 0, 0, 0.95),
     0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 64px;
+  overflow: hidden;
+}
+
+.np-art:not(.has-art) {
+  opacity: 0.55;
 }
 
 /* ── Track info ── */
