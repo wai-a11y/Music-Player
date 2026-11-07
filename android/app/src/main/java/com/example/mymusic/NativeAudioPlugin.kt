@@ -1,12 +1,9 @@
 package com.example.mymusic
 
 import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
 import androidx.media3.common.MediaItem
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import com.getcapacitor.JSObject
 import com.getcapacitor.Plugin
 import com.getcapacitor.PluginCall
 import com.getcapacitor.PluginMethod
@@ -20,69 +17,77 @@ class NativeAudioPlugin : Plugin() {
     private var controllerFuture: ListenableFuture<MediaController>? = null
     private var controller: MediaController? = null
 
-    private fun ensureController(call: PluginCall) {
-        if (controller != null) {
-            call.resolve()
-            return
-        }
+    private fun connect(onReady: (MediaController) -> Unit, onError: (String) -> Unit) {
+        controller?.let { onReady(it); return }
 
-        val token = SessionToken(
-            context,
-            ComponentName(context, AudioService::class.java)
-        )
+        val token = SessionToken(context, ComponentName(context, AudioService::class.java))
         controllerFuture = MediaController.Builder(context, token).buildAsync()
         controllerFuture?.addListener({
             try {
-                controller = controllerFuture?.get()
-                call.resolve()
+                val c = controllerFuture?.get()
+                controller = c
+                if (c != null) onReady(c) else onError("Controller null after connect")
             } catch (e: Exception) {
-                call.reject("Failed to connect to audio service: ${e.message}")
+                onError("Connect failed: ${e.message}")
             }
         }, MoreExecutors.directExecutor())
     }
 
     @PluginMethod
     fun play(call: PluginCall) {
-        val uri = call.getString("uri") ?: run {
-            call.reject("Missing 'uri' parameter")
+        val urisArray = call.getArray("uris")
+        val singleUri = call.getString("uri")
+        val startIndex = call.getInt("startIndex") ?: 0
+
+        val uriList: List<String> = when {
+            urisArray != null -> {
+                val list = mutableListOf<String>()
+                for (i in 0 until urisArray.length()) {
+                    urisArray.getString(i)?.let { list.add(it) }
+                }
+                list
+            }
+            singleUri != null -> listOf(singleUri)
+            else -> {
+                call.reject("Missing 'uris' or 'uri' parameter")
+                return
+            }
+        }
+
+        if (uriList.isEmpty()) {
+            call.reject("Empty URI list")
             return
         }
 
-        if (controller == null) {
-            // Connect first, then play
-            val token = SessionToken(
-                context,
-                ComponentName(context, AudioService::class.java)
-            )
-            controllerFuture = MediaController.Builder(context, token).buildAsync()
-            controllerFuture?.addListener({
+        connect(
+            onReady = { c ->
                 try {
-                    controller = controllerFuture?.get()
-                    controller?.setMediaItem(MediaItem.fromUri(uri))
-                    controller?.prepare()
-                    controller?.play()
+                    val items = uriList.map { MediaItem.fromUri(it) }
+                    c.setMediaItems(items, startIndex.coerceIn(0, items.size - 1), 0L)
+                    c.prepare()
+                    c.play()
                     call.resolve()
                 } catch (e: Exception) {
                     call.reject("Play failed: ${e.message}")
                 }
-            }, MoreExecutors.directExecutor())
-        } else {
-            controller?.setMediaItem(MediaItem.fromUri(uri))
-            controller?.prepare()
-            controller?.play()
-            call.resolve()
-        }
+            },
+            onError = { msg -> call.reject(msg) }
+        )
     }
 
     @PluginMethod
     fun pause(call: PluginCall) {
-        controller?.pause()
-        call.resolve()
+        connect(
+            onReady = { c -> c.pause(); call.resolve() },
+            onError = { msg -> call.reject(msg) }
+        )
     }
 
     @PluginMethod
     fun resume(call: PluginCall) {
-        controller?.play()
-        call.resolve()
+        connect(
+            onReady = { c -> c.play(); call.resolve() },
+            onError = { msg -> call.reject(msg) }
+        )
     }
 }
